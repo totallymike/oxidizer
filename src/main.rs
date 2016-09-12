@@ -7,6 +7,9 @@ mod rom;
 
 fn main() {
   // gui::run();
-  let rom = rom::Rom::new("sonic.bin");
-  println!("|{}|", rom.system_name().unwrap());
+  let mut rom = rom::Rom::new("sonic.bin").unwrap();
+  println!("|{}|", rom.system_name());
+  println!("|{}|", rom.domestic_name());
+  println!("{:#010x}", rom.rom_start());
+  println!("{:#010X}", rom.rom_end());
 }
