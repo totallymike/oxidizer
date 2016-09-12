@@ -1,0 +1,13 @@
+[package]
+name = "rusty_gen"
+version = "0.1.0"
+authors = ["Michael Westbom <michael@agilion.com>"]
+
+[dependencies]
+libc = "*"
+gl = "*"
+glutin = "*"
+gfx = "*"
+gfx_core = "*"
+gfx_window_glutin = "*"
+cgmath = "*"
