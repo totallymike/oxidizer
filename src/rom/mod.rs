@@ -1,13 +1,9 @@
-use byteorder::{BigEndian, ReadBytesExt};
 use std::io;
 use std::io::prelude::*;
 use std::fs::File;
-use std::io::Cursor;
 use std::io::SeekFrom;
-use std::io::BufReader;
 use std::mem;
 use std::str;
-use std::borrow::Cow;
 
 use std::path::Path;
 
@@ -17,8 +13,8 @@ pub struct Rom {
   pub control_data: String,
   pub rom_start: u32,
   pub rom_end: u32,
-  rom_data: Vec<u8>,
-  fd: File,
+  pub rom_data: Vec<u8>,
+  pub fd: File,
 }
 
 impl Rom {
@@ -37,11 +33,6 @@ impl Rom {
       fd: fd,
     })
   }
-  pub fn first_instruction(&mut self) -> u16 {
-    let mut fd = &self.fd;
-    fd.seek(SeekFrom::Start(0x206)).expect("Couldn't seek!");
-    fd.read_u16::<BigEndian>().unwrap()
-  }
 }
 
 fn rom_data(fd: &mut File) -> Vec<u8> {
@@ -51,7 +42,8 @@ fn rom_data(fd: &mut File) -> Vec<u8> {
   buffer.shrink_to_fit();
   buffer
 }
-fn system_name<'a>(fd: &mut File) -> String {
+
+fn system_name(fd: &mut File) -> String {
   let data = read_string(fd, 0x100, 0xF).unwrap();
   data.trim().to_owned()
 }
