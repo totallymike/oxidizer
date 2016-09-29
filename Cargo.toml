@@ -1,5 +1,5 @@
 [package]
-name = "rusty_gen"
+name = "oxidizer"
 version = "0.1.0"
 authors = ["Michael Westbom <michael@agilion.com>"]
 
