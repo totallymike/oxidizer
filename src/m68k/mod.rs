@@ -8,7 +8,7 @@ bitflags! {
   }
 }
 bitflags! {
-  pub flags OpCodes: u16 {
+  pub flags Instructions: u16 {
     const TST = 0b01001010 << 8,
     const TST_W = TST.bits | WORD.bits,
     const TST_L = TST.bits | LONG.bits,
@@ -16,7 +16,7 @@ bitflags! {
   }
 }
 
-impl fmt::Display for OpCodes {
+impl fmt::Display for Instructions {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {
       TST_L => write!(f, "tst.l"),

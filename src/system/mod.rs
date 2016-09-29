@@ -6,7 +6,7 @@ use byteorder::{BigEndian,ReadBytesExt,WriteBytesExt};
 
 use rom;
 use m68k;
-use m68k::OpCodes;
+use m68k::Instructions;
 use m68k::M68k;
 
 pub struct System {
@@ -33,7 +33,7 @@ impl System {
 
   pub fn process_next_instruction(&mut self) -> result::Result<bool, &'static str> {
     let instruction = self.read_next_word();
-    let opcode = OpCodes::from_bits_truncate(instruction);
+    let opcode = Instructions::from_bits_truncate(instruction);
 
     println!("instruction: {}", opcode);
     println!("opcode {:#018b}", instruction);
