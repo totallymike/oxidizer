@@ -97,23 +97,15 @@ impl System {
   }
 
   pub fn read_long(&mut self, address: usize) -> u32 {
-    use std::mem;
-    let memory = &self.memory;
-    let val: u32 = unsafe { mem::transmute([
-      memory[address],
-      memory[address + 1],
-      memory[address + 2],
-      memory[address + 3]])
-    };
-    u32::from_be(val)
+    let mut memory = &self.memory[address..];
+
+    memory.read_u32::<BigEndian>().unwrap()
   }
 
   pub fn read_memory_address(&self, address: usize) -> u16 {
-    println!("READ FROM ${:06x}", address);
-    use std::mem;
-    let memory = &self.memory;
-    let val: u16 = unsafe { mem::transmute([memory[address], memory[address + 1]]) };
-    u16::from_be(val)
+    let mut memory = &self.memory[address..];
+
+    memory.read_u16::<BigEndian>().unwrap()
   }
 
   fn tst<AM: AddressingMode>(&mut self, am: AM) {
