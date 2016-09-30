@@ -53,9 +53,10 @@ impl System {
       }
       m68k::TST_W => {
         let address = self.read_next_word() as usize;
-        let operand: u16 = self.read_memory_address(address);
-        println!("val in operand {:010x}", operand);
-        self.set_cpu_flags(operand);
+
+        let v = AbsoluteAddressingMode { val: address };
+        self.tst(v);
+
         Ok(true)
       }
       m68k::BNE => {
