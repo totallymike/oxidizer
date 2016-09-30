@@ -8,7 +8,7 @@ use rom;
 use m68k;
 use m68k::Instructions;
 use m68k::M68k;
-use m68k::addressing_modes::{AddressingMode,AbsoluteLongAddressingMode};
+use m68k::addressing_modes::{AddressingMode,AbsoluteAddressingMode};
 
 pub struct System {
   pub cpu: M68k,
@@ -45,9 +45,9 @@ impl System {
           addr <<= 16;
           addr | self.read_next_word() as usize
         };
-        
-        let v = AbsoluteLongAddressingMode { val: address };
-        self.tst_l(v);
+
+        let v = AbsoluteAddressingMode { val: address };
+        self.tst(v);
 
         Ok(true)
       }
@@ -99,7 +99,7 @@ impl System {
     u16::from_be(val)
   }
 
-  fn tst_l<AM: AddressingMode>(&mut self, am: AM) {
+  fn tst<AM: AddressingMode>(&mut self, am: AM) {
     let operand = am.load(self);
     println!("{:?}", operand);
     self.set_cpu_flags(operand);
