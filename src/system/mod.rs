@@ -41,9 +41,7 @@ impl System {
     match opcode {
       m68k::TST_L => {
         let address = {
-          let mut addr = self.read_next_word() as usize;
-          addr <<= 16;
-          addr | self.read_next_word() as usize
+          self.read_next_long() as usize
         };
 
         let v = AbsoluteAddressingMode { val: address };
@@ -92,6 +90,24 @@ impl System {
     self.read_memory_address(address)
   }
 
+  pub fn read_next_long(&mut self) -> u32 {
+    let address = self.cpu.pc_register as usize;
+    self.cpu.pc_register += 4;
+    self.read_long(address)
+  }
+
+  pub fn read_long(&mut self, address: usize) -> u32 {
+    use std::mem;
+    let memory = &self.memory;
+    let val: u32 = unsafe { mem::transmute([
+      memory[address],
+      memory[address + 1],
+      memory[address + 2],
+      memory[address + 3]])
+    };
+    u32::from_be(val)
+  }
+
   pub fn read_memory_address(&self, address: usize) -> u16 {
     println!("READ FROM ${:06x}", address);
     use std::mem;
@@ -105,7 +121,7 @@ impl System {
     println!("{:?}", operand);
     self.set_cpu_flags(operand);
   }
-  
+
   #[inline(always)]
   fn set_cpu_flags(&mut self, operand: u16) {
     match operand {
