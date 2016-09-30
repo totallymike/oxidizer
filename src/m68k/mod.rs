@@ -1,5 +1,7 @@
 use std::fmt;
 
+pub mod addressing_modes;
+
 bitflags! {
   pub flags SizeField: u16 {
     const BYTE = 0b00 << 6,

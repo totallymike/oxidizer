@@ -8,6 +8,7 @@ use rom;
 use m68k;
 use m68k::Instructions;
 use m68k::M68k;
+use m68k::addressing_modes::{AddressingMode,AbsoluteLongAddressingMode};
 
 pub struct System {
   pub cpu: M68k,
@@ -39,13 +40,15 @@ impl System {
     println!("opcode {:#018b}", instruction);
     match opcode {
       m68k::TST_L => {
-        let address_high: u32 = self.read_next_word() as u32;
-        let address_low = self.read_next_word();
-        let address_high = address_high << 16;
-        let address: usize = address_high as usize + address_low as usize;
-        let operand: u16 = self.read_memory_address(address);
-        self.set_cpu_flags(operand);
-        println!("val in operand {:010x}", operand);
+        let address = {
+          let mut addr = self.read_next_word() as usize;
+          addr <<= 16;
+          addr | self.read_next_word() as usize
+        };
+        
+        let v = AbsoluteLongAddressingMode { val: address };
+        self.tst_l(v);
+
         Ok(true)
       }
       m68k::TST_W => {
@@ -82,13 +85,13 @@ impl System {
     System { memory: cursor.into_inner(), ..system }
   }
 
-  fn read_next_word(&mut self) -> u16 {
+  pub fn read_next_word(&mut self) -> u16 {
     let address = self.cpu.pc_register as usize;
     self.cpu.pc_register += 2;
     self.read_memory_address(address)
   }
 
-  fn read_memory_address(&self, address: usize) -> u16 {
+  pub fn read_memory_address(&self, address: usize) -> u16 {
     println!("READ FROM ${:06x}", address);
     use std::mem;
     let memory = &self.memory;
@@ -96,6 +99,13 @@ impl System {
     u16::from_be(val)
   }
 
+  fn tst_l<AM: AddressingMode>(&mut self, am: AM) {
+    let operand = am.load(self);
+    println!("{:?}", operand);
+    self.set_cpu_flags(operand);
+  }
+  
+  #[inline(always)]
   fn set_cpu_flags(&mut self, operand: u16) {
     match operand {
       0u16 => { self.cpu.set_zero_flag(); },
