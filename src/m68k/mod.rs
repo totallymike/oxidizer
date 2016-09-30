@@ -45,6 +45,8 @@ pub struct M68k {
   address_registers: [u16; 8],
 }
 
+const CC_MASK: u16 = 0b0000000000011111;
+
 impl M68k {
   pub fn new() -> M68k {
     M68k {
@@ -55,6 +57,12 @@ impl M68k {
     }
   }
 
+  pub fn set_cc_flags(&mut self, flags: u16) {
+    let flags = CC_MASK & flags;
+
+    self.cc_register = flags;
+  }
+
   pub fn set_zero_flag(&mut self) {
     self.cc_register = ZERO.bits;
   }
@@ -63,5 +71,28 @@ impl M68k {
     ConditionCodes::from_bits(self.cc_register)
       .unwrap()
       .contains(ZERO)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::M68k;
+  #[test]
+  fn set_cc_flags_works() {
+    let mut cpu = M68k::new();
+    assert_eq!(cpu.cc_register, 0);
+
+    cpu.set_cc_flags(0b100);
+    assert_eq!(cpu.cc_register, 0b100);
+    cpu.set_cc_flags(0b1010);
+    assert_eq!(cpu.cc_register, 0b1010);
+  }
+
+  #[test]
+  fn set_cc_flags_ignores_wrong_values() {
+    let mut cpu = M68k::new();
+
+    cpu.set_cc_flags(0b111100000);
+    assert_eq!(cpu.cc_register, 0);
   }
 }
