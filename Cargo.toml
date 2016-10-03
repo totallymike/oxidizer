@@ -1,7 +1,7 @@
 [package]
 name = "oxidizer"
 version = "0.1.0"
-authors = ["Michael Westbom <michael@agilion.com>"]
+authors = ["Michael Westbom <michael@westbom.co>"]
 
 [dependencies]
 libc = "*"
