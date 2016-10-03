@@ -5,12 +5,12 @@ authors = ["Michael Westbom <michael@agilion.com>"]
 
 [dependencies]
 libc = "*"
-gl = "*"
-glutin = "*"
-gfx = "*"
-gfx_core = "*"
-gfx_window_glutin = "*"
+# gl = "*"
+# glutin = "*"
+# gfx = "*"
+# gfx_core = "*"
+# gfx_window_glutin = "*"
 cgmath = "*"
 byteorder = "0.5"
 bitflags = "0.7"
-clippy = "0.0.90"
+clippy = "*"
