@@ -93,10 +93,10 @@ impl System {
   pub fn read_next_long(&mut self) -> u32 {
     let address = self.cpu.pc_register as usize;
     self.cpu.pc_register += 4;
-    self.read_long(address)
+    self.read_ulong(address)
   }
 
-  pub fn read_long(&mut self, address: usize) -> u32 {
+  pub fn read_ulong(&mut self, address: usize) -> u32 {
     let mut memory = &self.memory[address..];
 
     memory.read_u32::<BigEndian>().unwrap()
