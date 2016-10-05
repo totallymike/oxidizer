@@ -6,9 +6,7 @@ use byteorder::{BigEndian,ReadBytesExt,WriteBytesExt};
 
 use rom;
 use m68k;
-use m68k::Instructions;
-use m68k::M68k;
-use m68k::addressing_modes::{AddressingMode,AbsoluteAddressingMode};
+use m68k::{M68k,OpCode};
 
 pub struct System {
   pub cpu: M68k,
