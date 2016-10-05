@@ -39,7 +39,7 @@ pub trait AbsoluteAddressingMode : AddressingMode {
 pub struct ErrorMode;
 
 impl AddressingMode for ErrorMode {
-  fn load<'a>(&self, system: &'a mut System) -> &'a [u8] {
+  fn load<'a>(&self, _system: &'a mut System) -> &'a [u8] {
     panic!("Not supposed to happen!");
   }
 }
