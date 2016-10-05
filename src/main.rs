@@ -3,10 +3,14 @@
 #[macro_use]
 extern crate bitflags;
 extern crate byteorder;
+#[cfg(gui)]
 extern crate gfx_core;
+#[cfg(gui)]
 extern crate gfx_window_glutin;
+#[cfg(gui)]
 extern crate glutin;
 
+#[cfg(gui)]
 mod gui;
 mod rom;
 mod m68k;
@@ -23,7 +27,7 @@ fn main() {
 
     System::load_rom(system, rom)
   };
-  
+
   system.cpu.pc_register = 0x206;
   let mut result = System::process_next(system);
   while let Ok(system) = result {
