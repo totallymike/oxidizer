@@ -31,32 +31,42 @@ impl System {
   }
 
   pub fn process_next_instruction(&mut self) -> result::Result<bool, &'static str> {
-    let instruction = self.read_next_word();
-    let opcode = Instructions::from_bits_truncate(instruction);
+    let location = self.cpu.pc_register;
+    println!("location: ${:X}", location);
+    let instruction = self.read_next_word() as u16;
+    let opcode = match OpCode::interpret(instruction) {
+      Some(opcode) => opcode,
+      None => { return Err("Fuck"); },
+    };
 
-    println!("instruction: {}", opcode);
+    println!("instruction: {}", opcode.instruction);
     println!("opcode {:#018b}", instruction);
-    match opcode {
+    match opcode.instruction {
       m68k::TST_L => {
-        let address = {
-          self.read_next_long() as usize
-        };
+        let addressing_mode = opcode.addressing_mode();
 
-        let v = AbsoluteAddressingMode { val: address };
-        self.tst(v);
-
+        let data = addressing_mode
+          .load(self)
+          .read_i32::<BigEndian>()
+          .unwrap();
+        self.tst_l(data);
         Ok(true)
       }
       m68k::TST_W => {
-        let address = self.read_next_word() as usize;
+        let addressing_mode = opcode.addressing_mode();
 
-        let v = AbsoluteAddressingMode { val: address };
-        self.tst(v);
+        let mut data = addressing_mode
+          .load(self)
+          .read_i16::<BigEndian>()
+          .unwrap();
+        self.tst_w(data);
 
         Ok(true)
       }
       m68k::BNE => {
-        if !self.cpu.zero() {
+        println!("CC Register {:018b}", self.cpu.cc_register);
+        if !self.cpu.zero_bit() {
+          println!("not zero, branching!");
           let address = instruction as u8;
           if address != 0xFF && address != 0x0 {
             let new_address = self.cpu.pc_register + address as u16;
@@ -82,7 +92,7 @@ impl System {
     System { memory: cursor.into_inner(), ..system }
   }
 
-  pub fn read_next_word(&mut self) -> u16 {
+  pub fn read_next_word(&mut self) -> i16 {
     let address = self.cpu.pc_register as usize;
     self.cpu.pc_register += 2;
     self.read_memory_address(address)
@@ -100,23 +110,35 @@ impl System {
     memory.read_u32::<BigEndian>().unwrap()
   }
 
-  pub fn read_memory_address(&self, address: usize) -> u16 {
+  pub fn read_memory_address(&self, address: usize) -> i16 {
     let mut memory = &self.memory[address..];
 
-    memory.read_u16::<BigEndian>().unwrap()
+    memory.read_i16::<BigEndian>().unwrap()
   }
 
-  fn tst<AM: AddressingMode>(&mut self, am: AM) {
-    let operand = am.load(self);
-    println!("{:?}", operand);
-    self.set_cpu_flags(operand);
+  fn tst_l(&mut self, operand: i32) {
+    println!("VALUE: {:#06x}", operand);
+
+    let extend_flag = self.cpu.cc_register & 0b10000;
+    let new_flags = extend_flag | match operand {
+      0i32 => 0b0100,
+      n if n < 0 => 0b1000,
+      _          => 0b0000,
+    };
+    self.cpu.set_cc_flags(new_flags);
+    println!("NEW CC {:#018x}", self.cpu.cc_register);
   }
 
-  #[inline(always)]
-  fn set_cpu_flags(&mut self, operand: u16) {
-    match operand {
-      0u16 => { self.cpu.set_zero_flag(); },
-      _ => { }
-    }
+  fn tst_w(&mut self, operand: i16) {
+    println!("VALUE: {:#06x}", operand);
+
+    let extend_flag = self.cpu.cc_register & 0b10000;
+    let new_flags = extend_flag | match operand {
+      0i16 => 0b0100,
+      n if n < 0 => 0b1000,
+      _          => 0b0000,
+    };
+    self.cpu.set_cc_flags(new_flags);
+    println!("{:#018x}", self.cpu.cc_register);
   }
 }

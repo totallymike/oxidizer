@@ -1,5 +1,7 @@
 use std::fmt;
 
+use system::System;
+
 pub mod addressing_modes;
 
 bitflags! {
@@ -9,12 +11,75 @@ bitflags! {
     const LONG = 0b10 << 6,
   }
 }
+
 bitflags! {
   pub flags Instructions: u16 {
     const TST = 0b01001010 << 8,
     const TST_W = TST.bits | WORD.bits,
     const TST_L = TST.bits | LONG.bits,
     const BNE = 0b01100110 << 8,
+  }
+}
+
+bitflags! {
+  pub flags AddressingModeFlags: u16 {
+    const ABSOLUTE_ADDRESSING_LONG_MODE = 0b111001,
+    const ABSOLUTE_ADDRESSING_WORD_MODE = 0b111000,
+  }
+}
+
+pub trait AddressingMode {
+  fn load<'a>(&self, system: &'a mut System) -> &'a [u8];
+}
+
+pub trait AbsoluteAddressingMode : AddressingMode {
+  fn address(&self, system: &mut System) -> usize;
+}
+
+pub struct ErrorMode;
+
+impl AddressingMode for ErrorMode {
+  fn load<'a>(&self, system: &'a mut System) -> &'a [u8] {
+    panic!("Not supposed to happen!");
+  }
+}
+
+pub struct AbsoluteLongAddressingMode;
+
+impl AddressingMode for AbsoluteLongAddressingMode {
+  fn load<'a>(&self, system: &'a mut System) -> &'a [u8] {
+    let address = self.address(system);
+    println!("Reading address ${:x}", address);
+    &system.memory[address..]
+  }
+}
+
+impl AbsoluteAddressingMode for AbsoluteLongAddressingMode {
+  fn address(&self, system: &mut System) -> usize {
+    system.read_next_long() as usize
+  }
+}
+
+pub struct OpCode {
+  pub instruction: Instructions,
+  raw_value: u16,
+}
+
+impl OpCode {
+  pub fn interpret(bits: u16) -> Option<OpCode> {
+    let instruction = Instructions::from_bits_truncate(bits);
+
+    Some(OpCode {
+      instruction: instruction,
+      raw_value: bits
+    })
+  }
+
+  pub fn addressing_mode(&self) -> Box<AddressingMode> {
+    match AddressingModeFlags::from_bits_truncate(self.raw_value) {
+      ABSOLUTE_ADDRESSING_LONG_MODE => Box::new(AbsoluteLongAddressingMode),
+      _ => Box::new(ErrorMode)
+    }
   }
 }
 
@@ -31,21 +96,20 @@ impl fmt::Display for Instructions {
 
 bitflags! {
   flags ConditionCodes: u16 {
-    const CARRY = 0b01,
-    const OVERFLOW = 0b10,
-    const ZERO = 0b100,
-    const EXTEND = 0b1000,
+    const CARRY    = 0b00001,
+    const OVERFLOW = 0b00010,
+    const ZERO     = 0b00100,
+    const NEGATIVE = 0b01000,
+    const EXTEND   = 0b10000,
   }
 }
 
 pub struct M68k {
-  cc_register: u16,
+  pub cc_register: u16,
   pub pc_register: u16,
   data_registers: [u16; 8],
   address_registers: [u16; 8],
 }
-
-const CC_MASK: u16 = 0b0000000000011111;
 
 impl M68k {
   pub fn new() -> M68k {
@@ -58,8 +122,6 @@ impl M68k {
   }
 
   pub fn set_cc_flags(&mut self, flags: u16) {
-    let flags = CC_MASK & flags;
-
     self.cc_register = flags;
   }
 
@@ -67,10 +129,16 @@ impl M68k {
     self.cc_register = ZERO.bits;
   }
 
-  pub fn zero(&self) -> bool {
+  pub fn zero_bit(&self) -> bool {
     ConditionCodes::from_bits(self.cc_register)
       .unwrap()
       .contains(ZERO)
+  }
+
+  pub fn extend_bit(&self) -> bool {
+    ConditionCodes::from_bits(self.cc_register)
+      .unwrap()
+      .contains(EXTEND)
   }
 }
 
@@ -89,10 +157,12 @@ mod tests {
   }
 
   #[test]
-  fn set_cc_flags_ignores_wrong_values() {
-    let mut cpu = M68k::new();
-
-    cpu.set_cc_flags(0b111100000);
-    assert_eq!(cpu.cc_register, 0);
+  fn whats_up_with_bitflags() {
+    let foo: u16 = 0b111001;
+    match super::AddressingModeFlags::from_bits_truncate(foo) {
+      super::ABSOLUTE_ADDRESSING_LONG_MODE => assert!(true),
+      super::ABSOLUTE_ADDRESSING_WORD_MODE => assert!(false),
+      super::AddressingModeFlags{ .. } => assert!(false),
+    }
   }
 }
